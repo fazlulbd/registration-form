@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Container, Row, Alert, Form, Button, Spinner } from 'react-bootstrap'
 import { Link,  useNavigate } from 'react-router-dom'
 import  "../firebaseconfig"
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
 const Registration = () => {
     const navigate = useNavigate();
@@ -17,6 +17,7 @@ const Registration = () => {
     const [errorPassword, setErrorPassword]=useState("")
     const [errorCfpassword, setErrorCfpassword]=useState("")
     const [matchPassword, setMatchPassword]=useState("")
+    const [matchEmail, setMatchEmail]=useState("")
 
     const handelUser = (e)=>{
         setUser(e.target.value)
@@ -51,18 +52,25 @@ const Registration = () => {
             setLoading(true)
             const auth = getAuth();
             createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                // console.log(user)
+            .then((user) => {
+
+                console.log(user)
                 setLoading(false)
+                sendEmailVerification(auth.currentUser)
+                .then(() => {
+                    console.log('email verified')
+                });
                 navigate("/login",{state:"Account Created Successful"});
 
             })
             .catch((error) => { 
                 const errorCode = error.code;
                 const errorMessage = error.message;
-                console.log(error)
-                // ..
+                if(errorCode.includes('email')){
+                    setMatchEmail('Email Alredy in used')
+                    setLoading(false)
+                }
+                
             });
           }
     }
@@ -126,16 +134,26 @@ const Registration = () => {
                     </Form.Text>
                     : ""
                     }
+                    {
+                     matchEmail ?
+                    <Form.Text className="text-muted">
+                        {matchEmail}
+                    </Form.Text>
+                    : ""
+                    }
                 </Form.Group>
-                <Button onClick={handleSubmit} variant="primary" type="submit" className='px-5'>
+                
                 {
                     loading ?
-                    <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                    </Spinner>
-                    : "Submit"
+                    <Button  variant="primary" type="submit" className='px-5'>
+                        <Spinner animation="border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                        </Spinner>
+                    </Button>
+                    : 
+                    <Button onClick={handleSubmit} variant="primary" type="submit" className='px-5'>Submit</Button>
                 }
-                </Button>
+               
                 <div className='text-center'>
                     <Form.Text id="passwordHelpBlock" muted>
                         Alredy have an account? <Link to="/login">login</Link>
